@@ -1,5 +1,36 @@
 import { test, expect } from '@playwright/test';
 
+test('explore the sample and then start a real tournament', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Load sample tournament' }).click();
+  await expect(page.getByText('8 teams · 2 courts · 8 / 28 matches recorded', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Round 5 of 14', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Load sample tournament' })).toHaveCount(0);
+  const rows = page.locator('tbody tr');
+  await expect(rows).toHaveCount(8);
+  const wins = await rows.evaluateAll(elements => elements.reduce((sum, row) => sum + Number(row.children[2].textContent), 0));
+  expect(wins).toBe(8);
+  const standings = await rows.allTextContents();
+  await page.reload();
+  await expect(rows).toHaveText(standings);
+  await expect(page.getByRole('heading', { name: 'Round 5 of 14', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Previous round' }).click();
+  await expect(page.getByRole('form', { name: 'Court 1 result' }).getByRole('spinbutton').first()).toHaveValue('11');
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('.scorecard')).toHaveCount(28);
+  await expect(page.locator('.scorecard').first()).toBeVisible();
+  await expect(page.getByRole('table')).toBeVisible();
+  await page.emulateMedia({ media: 'screen' });
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'New tournament' }).click();
+  await page.reload();
+  await expect(page.getByLabel('Team names')).toHaveValue('');
+  await page.getByLabel('Team names').fill('Aces\nSpinners\nLobsters\nDinkers');
+  await page.getByRole('button', { name: 'Create tournament' }).click();
+  await expect(page.getByText('4 teams · 1 court · 0 / 6 matches recorded', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Load sample tournament' })).toHaveCount(0);
+});
+
 test('run, persist, print, and restore a small tournament', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Team names').fill('Aces\nSpinners\nLobsters\nDinkers');

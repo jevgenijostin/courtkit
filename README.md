@@ -13,6 +13,16 @@ npm run dev
 
 Open the local URL printed by Vite. For a production build, run `npm run build`; serve the resulting `dist` directory with a static web server (or use `npx vite preview` locally).
 
+## Live demo
+
+There is no hosted demo yet. Run `npm ci` and `npm run dev`, open the local URL printed by Vite, and select **Load sample tournament** on the setup screen. This loads eight club teams on two courts, with the first four rounds (eight matches) scored. Explore the standings, edit results, or select **Print scorecards** to preview all 28 matches and the current standings.
+
+The sample is saved in this browser and survives refresh. Select **New tournament** and confirm to clear it before starting your own. The sample button is only available on the empty setup screen; if you already have a tournament, export a backup before clearing it, or try the demo in a separate browser profile.
+
+## Status
+
+CourtKit was built in one unattended overnight AI-assisted session on 2026-10-07 as a portfolio/demo project.
+
 ## Run a tournament
 
 1. Enter one team name per line, choose the court count, and select **Create tournament**.
@@ -35,6 +45,8 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Unit tests cover scheduling, standings, and storage validation. The Chromium end-to-end test builds and serves the production app, creates a tournament, records and edits a result, checks standings and refresh persistence, verifies print visibility, and exercises backup export/import and reset confirmation.
+Unit tests cover scheduling, standings, and storage validation. The Chromium end-to-end suite builds and serves the production app, creates a tournament, records and edits a result, checks standings and refresh persistence, verifies print visibility, and exercises backup export/import and reset confirmation. It also verifies the sample tournament, its standings and print view, and the transition back to a real tournament.
+
+GitHub Actions runs dependency installation, unit tests, the production build, and Chromium end-to-end tests on pushes and pull requests to `main`, using Node 20 and npm caching.
 
 `npm run build` checks TypeScript and produces the production bundle. Playwright starts its own preview server on port 4173; leave that port free.

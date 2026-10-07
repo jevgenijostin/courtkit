@@ -1,4 +1,5 @@
 import './style.css';
+import { createSampleTournament } from './demo';
 import { validateScore } from './domain';
 import type { TournamentState } from './domain';
 import { generateSchedule } from './scheduler';
@@ -66,6 +67,12 @@ function render(focusHeading = false) {
       render(true);
     });
   });
+  document.querySelector('#demo')?.addEventListener('click', () => attempt(() => {
+    persist(createSampleTournament());
+    roundIndex = 4;
+    render(true);
+    notice('Sample tournament loaded: four rounds scored. Use New tournament when you are ready to start your own.');
+  }));
   if (focusHeading) document.querySelector<HTMLElement>('h1')!.focus();
 }
 
@@ -79,7 +86,9 @@ function setup() {
     <label for="courts">Number of courts</label>
     <input id="courts" name="courts" type="number" min="1" max="4" step="1" value="1" required>
     <button class="primary" type="submit">Create tournament</button></form>
-    <p class="hint">Saved automatically in this browser. Export a backup to keep a portable copy.</p></section>`;
+    <p class="hint">Saved automatically in this browser. Export a backup to keep a portable copy.</p>
+    <button id="demo" type="button" aria-describedby="demo-help">Load sample tournament</button>
+    <p id="demo-help" class="hint">Explore 8 teams on 2 courts with four rounds already scored. The sample saves in this browser; use New tournament to clear it and start your own.</p></section>`;
 }
 
 function tournament() {
