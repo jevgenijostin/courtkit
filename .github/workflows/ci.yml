@@ -12,6 +12,11 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        github_pages: ['false', 'true']
+    env:
+      GITHUB_PAGES: ${{ matrix.github_pages }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7

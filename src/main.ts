@@ -1,4 +1,13 @@
 import './style.css';
+
+// Production only: keep Vite's development server and HMR uncached.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
+      scope: import.meta.env.BASE_URL,
+    }).catch(error => console.warn('Offline app cache could not be installed:', error));
+  });
+}
 import { createSampleTournament } from './demo';
 import { validateScore } from './domain';
 import type { TournamentState } from './domain';

@@ -4,6 +4,8 @@
 
 A small browser tournament desk for pickleball or padel clubs. Enter 4–12 fixed doubles teams and 1–4 courts to create a round robin where every team plays every other team once. Built with TypeScript, Vite, and plain CSS; no framework or backend.
 
+![CourtKit sample tournament showing the round schedule and standings](docs/screenshot.png)
+
 ## Run locally
 
 Install a current Node.js LTS release and run:
@@ -37,7 +39,9 @@ Teams, schedule, and saved scores persist automatically in this browser's localS
 
 **Export backup** downloads a validated JSON file. **Import backup** restores one from either screen and asks before replacing an active tournament. **New tournament** asks before deleting the current saved tournament. Storage or import failures are shown on screen; a failed save does not replace the current state.
 
-Tournament operations run locally after the page loads. Back up before clearing browser data. Installation and reliable offline page reloads via a service worker are not implemented yet.
+Production builds cache the app shell (HTML, CSS, and JavaScript) with a service worker on the first online visit. Once caching finishes, you can reload or reopen the same address offline and continue recording results. The first visit still needs a connection; clearing browser data also clears the offline cache and saved tournament, so export a backup first. Service workers require HTTPS (or localhost); caching is disabled in the Vite development server.
+
+App-shell files use a cache-first strategy with a version derived from each build. Updates download on an online visit and activate after all existing app tabs close; reopen the app to use the update. No installation, push notifications, or background sync is required.
 
 ## Tests
 
@@ -54,3 +58,7 @@ GitHub Actions runs dependency installation, unit tests, the production build, a
 The Pages workflow builds and deploys `dist/` on every push to `main` (or a manual workflow run), using the official GitHub Pages artifact and deployment actions with the built-in `GITHUB_TOKEN`. Its build sets `GITHUB_PAGES=true` to prefix assets with `/courtkit/`; ordinary local development and builds use `/`. To reproduce the Pages build locally, set that environment variable and run `npm ci` followed by `npm run build`.
 
 `npm run build` checks TypeScript and produces the production bundle. Playwright starts its own preview server on port 4173; leave that port free.
+
+The offline end-to-end check disables the ordinary HTTP cache, goes offline after the first load, reloads the app through the service worker, records a result, and reopens the tournament offline. Set `GITHUB_PAGES=true` when running `npm run test:e2e` to run the entire suite against `/courtkit/` as well.
+
+To refresh the README screenshot, build and start `npm exec vite preview`, then run `node scripts/screenshot.mjs` (optionally passing the preview URL, including `/courtkit/` for a Pages build).

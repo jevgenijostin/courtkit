@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('caps scores and reminds users to back up without interrupting entry', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByLabel('Team names').fill('Aces\nSpinners\nLobsters\nDinkers');
   await page.getByRole('button', { name: 'Create tournament' }).click();
   const reminder = page.getByRole('complementary', { name: 'Backup reminder' });
@@ -38,7 +38,7 @@ test('caps scores and reminds users to back up without interrupting entry', asyn
 });
 
 test('explore the sample and then start a real tournament', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: 'Load sample tournament' }).click();
   await expect(page.getByText('8 teams · 2 courts · 8 / 28 matches recorded', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Round 5 of 14', exact: true })).toBeVisible();
@@ -69,7 +69,7 @@ test('explore the sample and then start a real tournament', async ({ page }) => 
 });
 
 test('run, persist, print, and restore a small tournament', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByLabel('Team names').fill('Aces\nSpinners\nLobsters\nDinkers');
   await page.getByLabel('Number of courts').fill('1');
   await page.getByRole('button', { name: 'Create tournament' }).click();
