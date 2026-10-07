@@ -53,9 +53,9 @@ export function validateCourtCount(courtCount: number): void {
 }
 
 export function validateScore(result: MatchResult): void {
-  if (!Number.isSafeInteger(result.homeScore) || result.homeScore < 0 ||
-      !Number.isSafeInteger(result.awayScore) || result.awayScore < 0 ||
+  if (!Number.isSafeInteger(result.homeScore) || result.homeScore < 0 || result.homeScore > 99 ||
+      !Number.isSafeInteger(result.awayScore) || result.awayScore < 0 || result.awayScore > 99 ||
       result.homeScore === result.awayScore) {
-    throw new Error('Completed matches require nonnegative integer scores and a winner.');
+    throw new Error('Completed matches require integer scores from 0–99 and a winner.');
   }
 }

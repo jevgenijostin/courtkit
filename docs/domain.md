@@ -11,7 +11,7 @@ development. All domain operations run locally and require no network services.
   rounds start at 1. Output is deterministic and inputs are not mutated. Rest
   spacing, home/away balance, and minimum total time slots are not optimized.
 - `computeStandings(teams, schedule, results)` counts only completed matches.
-  Scores are nonnegative safe integers with a winner; there is no fixed target
+  Scores are integers from 0–99 with a winner; there is no fixed target
   score. Unplayed matches have no result. Wins sort first, then point
   differential. Equal teams retain input order and share competition ranks
   (1, 1, 3), without a hidden tiebreaker.

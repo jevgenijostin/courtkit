@@ -9,6 +9,14 @@ import { exportToJson, importFromJson, loadTournament, saveTournament, STORAGE_K
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let state: TournamentState | null = null;
 let roundIndex = 0;
+let backupReminderVisible = false;
+let savesSinceReminder = 0;
+
+function clearBackupReminder() {
+  backupReminderVisible = false;
+  savesSinceReminder = 0;
+  document.querySelector('#backup-reminder')?.remove();
+}
 const escape = (value: string) => value.replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[char]!);
@@ -47,6 +55,7 @@ function render(focusHeading = false) {
       const next = importFromJson(await file.text());
       if (state && !window.confirm('Replace the current tournament with this backup?')) return;
       persist(next);
+      clearBackupReminder();
       roundIndex = 0;
       render(true);
       notice('Backup restored.');
@@ -63,6 +72,8 @@ function render(focusHeading = false) {
         .map((teamName, index) => ({ id: `team-${index + 1}`, name: teamName }));
       const courtCount = Number(data.get('courts'));
       persist({ version: 1, teams, courtCount, schedule: generateSchedule(teams, courtCount), results: [] });
+      backupReminderVisible = true;
+      savesSinceReminder = 0;
       roundIndex = 0;
       render(true);
     });
@@ -98,18 +109,19 @@ function tournament() {
     <h1 tabindex="-1">Your tournament</h1>
     <p>${current.teams.length} teams · ${current.courtCount} court${current.courtCount === 1 ? '' : 's'} · ${current.results.length} / ${current.schedule.flatMap(r => r.matches).length} matches recorded</p>
     <div class="toolbar"><button id="print">Print scorecards</button><button id="export">Export backup</button><button id="reset" class="danger">New tournament</button></div>
+    ${backupReminderVisible ? `<aside id="backup-reminder" class="backup-reminder" aria-label="Backup reminder"><p class="hint">Your tournament is saved only in this browser. Click <strong>Export backup</strong> to keep a copy in case browser data is cleared.</p><button id="dismiss-backup" type="button" aria-label="Dismiss backup reminder">Dismiss</button></aside>` : ''}
     <section class="panel"><nav aria-label="Round navigation"><button id="prev" ${roundIndex === 0 ? 'disabled' : ''}>Previous round</button>
     <h2>Round ${round.number} <span class="hint">of ${current.schedule.length}</span></h2>
     <button id="next" ${roundIndex === current.schedule.length - 1 ? 'disabled' : ''}>Next round</button></nav>
-    <p class="hint">Use whole-number scores. Completed matches must have a winner.</p>
+    <p class="hint">Use whole-number scores from 0–99. Completed matches must have a winner.</p>
     <div class="matches">${round.matches.map((match, index) => {
       const result = current.results.find(r => r.matchId === match.id);
       return `<form class="match" data-match-index="${index}" aria-label="Court ${match.court} result">
         <h3>Court ${match.court}</h3><p class="saved">${result ? `Saved: ${result.homeScore} – ${result.awayScore}` : 'Awaiting result'}</p>
         <label for="home-${index}">${name(match.homeTeamId)} <span class="hint">(home)</span></label>
-        <input id="home-${index}" name="home" aria-label="${name(match.homeTeamId)} home score" type="number" min="0" max="${Number.MAX_SAFE_INTEGER}" step="1" required value="${result?.homeScore ?? ''}">
+        <input id="home-${index}" name="home" aria-label="${name(match.homeTeamId)} home score" type="number" min="0" max="99" step="1" required value="${result?.homeScore ?? ''}">
         <label for="away-${index}">${name(match.awayTeamId)} <span class="hint">(away)</span></label>
-        <input id="away-${index}" name="away" aria-label="${name(match.awayTeamId)} away score" type="number" min="0" max="${Number.MAX_SAFE_INTEGER}" step="1" required value="${result?.awayScore ?? ''}">
+        <input id="away-${index}" name="away" aria-label="${name(match.awayTeamId)} away score" type="number" min="0" max="99" step="1" required value="${result?.awayScore ?? ''}">
         <button class="primary" type="submit">Save result</button></form>`;
     }).join('')}</div><p class="byes"><strong>Byes this round:</strong> ${round.byes.length ? round.byes.map(name).join(', ') : 'None — everyone plays.'}</p></section></section>
     <section class="print-only"><h1>CourtKit · Match scorecards</h1>
@@ -120,6 +132,10 @@ function tournament() {
 }
 
 function wireTournament() {
+  document.querySelector('#dismiss-backup')?.addEventListener('click', () => {
+    clearBackupReminder();
+    document.querySelector<HTMLButtonElement>('#export')!.focus();
+  });
   for (const [selector, delta] of [['#prev', -1], ['#next', 1]] as const) {
     document.querySelector(selector)!.addEventListener('click', () => {
       roundIndex += delta;
@@ -136,6 +152,8 @@ function wireTournament() {
         const result = { matchId: match.id, homeScore: Number(data.get('home')), awayScore: Number(data.get('away')) };
         validateScore(result);
         persist({ ...state!, results: [...state!.results.filter(r => r.matchId !== match.id), result] });
+        savesSinceReminder += 1;
+        if (savesSinceReminder >= 5) backupReminderVisible = true;
         render();
         document.querySelector<HTMLButtonElement>(`[data-match-index="${form.dataset.matchIndex}"] button`)!.focus();
         notice(`Court ${match.court} result saved. Standings updated.`);
@@ -145,7 +163,7 @@ function wireTournament() {
   document.querySelector('#print')!.addEventListener('click', () => window.print());
   document.querySelector('#reset')!.addEventListener('click', () => {
     if (!window.confirm('Delete this tournament and all saved results? Export a backup first if you want to keep them.')) return;
-    attempt(() => { localStorage.removeItem(STORAGE_KEY); state = null; roundIndex = 0; render(true); });
+    attempt(() => { localStorage.removeItem(STORAGE_KEY); clearBackupReminder(); state = null; roundIndex = 0; render(true); });
   });
   document.querySelector('#export')!.addEventListener('click', () => attempt(() => {
     const url = URL.createObjectURL(new Blob([exportToJson(state!)], { type: 'application/json' }));
@@ -153,6 +171,7 @@ function wireTournament() {
     link.href = url;
     link.download = 'courtkit-backup.json';
     link.click();
+    clearBackupReminder();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }));
 }

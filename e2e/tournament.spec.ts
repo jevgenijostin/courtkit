@@ -1,5 +1,42 @@
 import { test, expect } from '@playwright/test';
 
+test('caps scores and reminds users to back up without interrupting entry', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Team names').fill('Aces\nSpinners\nLobsters\nDinkers');
+  await page.getByRole('button', { name: 'Create tournament' }).click();
+  const reminder = page.getByRole('complementary', { name: 'Backup reminder' });
+  await expect(reminder).toBeVisible();
+  const match = page.getByRole('form', { name: 'Court 1 result' });
+  const home = match.getByRole('spinbutton').first();
+  const away = match.getByRole('spinbutton').last();
+  await home.fill('100');
+  await away.fill('0');
+  await page.getByRole('button', { name: 'Dismiss backup reminder' }).click();
+  await expect(reminder).toHaveCount(0);
+  await expect(home).toHaveValue('100');
+  await match.getByRole('button', { name: 'Save result' }).click();
+  expect(await home.evaluate((input: HTMLInputElement) => input.validity.rangeOverflow)).toBe(true);
+  await expect(match.getByText('Awaiting result')).toBeVisible();
+  await home.fill('99');
+  await away.fill('100');
+  await match.getByRole('button', { name: 'Save result' }).click();
+  expect(await away.evaluate((input: HTMLInputElement) => input.validity.rangeOverflow)).toBe(true);
+  await expect(match.getByText('Awaiting result')).toBeVisible();
+  for (let save = 1; save <= 5; save++) {
+    await away.fill(String(save));
+    await match.getByRole('button', { name: 'Save result' }).click();
+    await expect(match.getByText(`Saved: 99 – ${save}`, { exact: true })).toBeVisible();
+    await expect(reminder).toHaveCount(save === 5 ? 1 : 0);
+  }
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export backup' }).click();
+  await downloadPromise;
+  await expect(reminder).toHaveCount(0);
+  await away.fill('6');
+  await match.getByRole('button', { name: 'Save result' }).click();
+  await expect(reminder).toHaveCount(0);
+});
+
 test('explore the sample and then start a real tournament', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Load sample tournament' }).click();
