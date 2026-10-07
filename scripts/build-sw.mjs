@@ -19,8 +19,7 @@ const SHELL = ${JSON.stringify(files)}.map(file => new URL(file, ROOT).href);
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(
     SHELL.map(url => new Request(url, { cache: 'reload' }))
-  )));
-  // Updates wait until existing tabs close, keeping each session on one build.
+  )).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {

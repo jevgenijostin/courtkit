@@ -5,8 +5,53 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
       scope: import.meta.env.BASE_URL,
+    }).then(registration => {
+      const trackUpdate = (worker: ServiceWorker | null) => {
+        if (!worker) return;
+        let notified = false;
+        const checkState = () => {
+          if (!notified && worker.state === 'installed' && navigator.serviceWorker.controller) {
+            notified = true;
+            showUpdatePrompt(worker);
+          }
+        };
+        worker.addEventListener('statechange', checkState);
+        checkState();
+      };
+      registration.addEventListener('updatefound', () => trackUpdate(registration.installing));
+      trackUpdate(registration.installing ?? registration.waiting);
     }).catch(error => console.warn('Offline app cache could not be installed:', error));
   });
+}
+
+function showUpdatePrompt(worker: ServiceWorker) {
+  document.querySelector('#app-update')?.remove();
+  const prompt = document.createElement('aside');
+  prompt.id = 'app-update';
+  prompt.className = 'update-prompt backup-reminder screen-only';
+  prompt.setAttribute('aria-label', 'App update');
+  prompt.innerHTML = `<p role="status">Update available. Save any unfinished scores or setup before reloading.</p>
+    <button type="button" data-reload disabled>Reload</button>
+    <button type="button" data-dismiss aria-label="Dismiss update notification">Dismiss</button>`;
+  const reload = prompt.querySelector<HTMLButtonElement>('[data-reload]')!;
+  // Wait for the new worker to control this tab so reload uses its new shell.
+  const checkController = () => {
+    if (navigator.serviceWorker.controller === worker && worker.state === 'activated') {
+      reload.disabled = false;
+      navigator.serviceWorker.removeEventListener('controllerchange', checkController);
+      worker.removeEventListener('statechange', checkController);
+    }
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', checkController);
+  worker.addEventListener('statechange', checkController);
+  checkController();
+  reload.addEventListener('click', () => {
+    reload.disabled = true;
+    window.location.reload();
+  });
+  prompt.querySelector('[data-dismiss]')!.addEventListener('click', () => prompt.remove());
+  // Keep the notification outside app renders to preserve unfinished form input.
+  document.body.prepend(prompt);
 }
 import { createSampleTournament } from './demo';
 import { validateScore } from './domain';
