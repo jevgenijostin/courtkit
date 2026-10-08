@@ -149,7 +149,7 @@ function setup() {
     <p id="team-help" class="hint">Enter 4–12 teams, one name per line. Each team is a fixed partnership.</p>
     <textarea id="teams" name="teams" rows="8" required aria-describedby="team-help" placeholder="Baseline crew&#10;Kitchen kings&#10;Court &amp; spark&#10;The spin doctors"></textarea>
     <label for="courts">Number of courts</label>
-    <input id="courts" name="courts" type="number" min="1" max="4" step="1" value="1" required>
+    <input id="courts" name="courts" type="number" inputmode="numeric" min="1" max="4" step="1" value="1" required>
     <button class="primary" type="submit">Create tournament</button></form>
     <p class="hint">Saved automatically in this browser. Export a backup to keep a portable copy.</p>
     <button id="demo" type="button" aria-describedby="demo-help">Load sample tournament</button>
@@ -173,15 +173,16 @@ function tournament() {
       return `<form class="match" data-match-index="${index}" aria-label="Court ${match.court} result">
         <h3>Court ${match.court}</h3><p class="saved">${result ? `Saved: ${result.homeScore} – ${result.awayScore}` : 'Awaiting result'}</p>
         <label for="home-${index}">${name(match.homeTeamId)} <span class="hint">(home)</span></label>
-        <input id="home-${index}" name="home" aria-label="${name(match.homeTeamId)} home score" type="number" min="0" max="99" step="1" required value="${result?.homeScore ?? ''}">
+        <input id="home-${index}" name="home" aria-label="${name(match.homeTeamId)} home score" type="number" inputmode="numeric" min="0" max="99" step="1" required value="${result?.homeScore ?? ''}">
         <label for="away-${index}">${name(match.awayTeamId)} <span class="hint">(away)</span></label>
-        <input id="away-${index}" name="away" aria-label="${name(match.awayTeamId)} away score" type="number" min="0" max="99" step="1" required value="${result?.awayScore ?? ''}">
+        <input id="away-${index}" name="away" aria-label="${name(match.awayTeamId)} away score" type="number" inputmode="numeric" min="0" max="99" step="1" required value="${result?.awayScore ?? ''}">
         <button class="primary" type="submit">Save result</button></form>`;
     }).join('')}</div><p class="byes"><strong>Byes this round:</strong> ${round.byes.length ? round.byes.map(name).join(', ') : 'None — everyone plays.'}</p></section></section>
     <section class="print-only"><h1>CourtKit · Match scorecards</h1>
     ${current.schedule.map(r => `<section class="print-round"><h2>Round ${r.number}</h2><div class="scorecards">${r.matches.map(m => `<article class="scorecard"><h3>Round ${r.number} · Court ${m.court}</h3><p>${name(m.homeTeamId)} <span class="score-line"></span></p><p>${name(m.awayTeamId)} <span class="score-line"></span></p></article>`).join('')}</div><p>Byes: ${r.byes.length ? r.byes.map(name).join(', ') : 'None'}</p></section>`).join('')}</section>
-    <section class="panel standings"><h2>Standings</h2><p class="hint">Ranked by wins, then point difference. Equal records share a rank.</p>
-    <div class="table-scroll"><table><caption class="sr-only">Tournament standings</caption><thead><tr><th scope="col">Rank</th><th scope="col">Team</th><th scope="col">Wins</th><th scope="col">Points for</th><th scope="col">Points against</th><th scope="col">Point diff</th></tr></thead>
+    <section class="panel standings"><h2 id="standings-heading">Standings</h2><p class="hint">Ranked by wins, then point difference. Equal records share a rank.</p>
+    <p class="hint table-hint screen-only" id="table-help">Swipe or scroll sideways to see all standings columns.</p>
+    <div class="table-scroll" role="region" aria-labelledby="standings-heading" tabindex="0"><table><caption class="sr-only">Tournament standings</caption><thead><tr><th scope="col">Rank</th><th scope="col">Team</th><th scope="col">Wins</th><th scope="col">Points for</th><th scope="col">Points against</th><th scope="col">Point diff</th></tr></thead>
     <tbody>${computeStandings(current.teams, current.schedule, current.results).map(row => `<tr><td>${row.rank}</td><th scope="row">${name(row.teamId)}</th><td>${row.wins}</td><td>${row.pointsFor}</td><td>${row.pointsAgainst}</td><td>${row.pointDifferential > 0 ? '+' : ''}${row.pointDifferential}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 
