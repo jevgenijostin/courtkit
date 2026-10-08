@@ -16,6 +16,7 @@ input, textarea, button { font: inherit; }
 input, textarea { border: 1px solid #82968c; border-radius: 7px; padding: 10px; background: white; color: #193c35; }
 textarea { width: 100%; resize: vertical; }
 input { width: 100px; display: block; margin: 6px 0 16px; }
+input[hidden] { display: none; }
 button { cursor: pointer; padding: 10px 16px; border: 1px solid #a9bbb0; border-radius: 8px; background: white; color: #193c35; font-weight: 650; }
 button:hover { background: #edf2e9; }
 button.primary { background: #193c35; color: white; border-color: #193c35; }
